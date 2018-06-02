@@ -78,16 +78,78 @@ extension LinkedList: CustomStringConvertible {
             tail = head
         }
     }
+    
+    // Append - This is meant to add a value at the end of the list, and is known as tail-end insertion.
+    public mutating func append(_ value: Value) {
+        // 1
+        guard !isEmpty else {
+            push(value)
+            return
+        }
+        // 2
+        tail!.next = Node(value: value)
+        // 3
+        tail = tail!.next
+    }
+    
+    // Insert After - This operation inserts a value at a particular place in the list, and requires two steps:
+    
+        /// 1. Finding a particular node in the list.
+        /// 2. Inserting the new node.
+    
+    public func node(at index: Int) -> Node<Value>? {
+        // a.- You create a new reference to head and keep track of the current number of traversals.
+        var currentNode = head
+        var currentIndex = 0
+        // b.- Using a while loop, you move the reference down the list until you’ve reached the desired index. Empty lists or out-of-bounds indexes will result in a nil return value.
+        while currentNode != nil && currentIndex < index {
+            currentNode = currentNode!.next
+            currentIndex += 1
+        }
+        return currentNode
+    }
+    
+    // a.- discardableResult lets callers ignore the return value of this method without the compiler jumping up and down warning you about it.
+    @discardableResult
+    public mutating func insert(_ value: Value, after node: Node<Value>) -> Node<Value> {
+        
+        // b.- In the case where this method is called with the tail node, you’ll call the functionally equivalent append method. This will take care of updating tail.
+        guard tail !== node else {
+            append(value)
+            return tail!
+        }
+        // c.- Otherwise, you simply link up the new node with the rest of the list and return the new node.
+        node.next = Node(value: value, next: node.next)
+        return node.next!
+    }
 }
 
 /// ---Example of Push---
 
 var list = LinkedList<Int>()
-list.push(3)
-list.push(2)
 list.push(1)
+list.push(2)
+list.push(3)
 
 print(list)
+
+/// ---Example of Append---
+
+var list1 = LinkedList<Int>()
+list1.append(1)
+list1.append(2)
+list1.append(3)
+print(list1)
+
+/// ---Example of Insert at---
+print("Before inserting \(list1)")
+var middleNode = list1.node(at: 1)!
+for _ in 1...2 {
+    middleNode = list1.insert(8, after: middleNode)
+}
+print("After inserting \(list1)")
+
+
 
 
 
