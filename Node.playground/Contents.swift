@@ -158,5 +158,3 @@ print("After inserting \(list1)")
 
 
 
-
-
