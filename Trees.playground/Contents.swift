@@ -98,7 +98,6 @@ beverageTree.forEachDepthFirst { print($0.value) }
 
 // search -
 
-
 // Binary trees -  A binary tree is a tree where each node has at most two children, often referred to as the left and right children.
 
 public class BinaryNode<Element> {
@@ -163,7 +162,7 @@ print(tree)
 
 /* Traversal algorithms:
  
-Previously, you looked at a level-order traversal of a tree. With a few tweaks, you can make this algorithm work for binary trees as well. However, instead of re-implementing level-order traversal, you’ll look at three traversal algorithms for binary trees: in-order, pre-order, and post-order traversals.
+Previously, you looked at a level-order traversal of a tree. With a few tweaks, you can make this algorithm work for binary trees as well. However, instead of re-implementing level-order traversal, you’ll look at 3 traversal algorithms for binary trees: in-order, pre-order, and post-order traversals.
 */
 
 // In-order traversal:
@@ -188,15 +187,14 @@ extension BinaryNode {
 
 //tree.traverseInOrder { print($0) }
 
-
 // Pre-order traversal: Pre-order traversal always visits the current node first, then recursively visits the left and right child
 
 extension BinaryNode {
     
     public func traversePreOrder(visit: (Element) -> Void) {
         visit(value)
-        leftChild?.traverseInOrder(visit: visit)
-        rightChild?.traverseInOrder(visit: visit)
+        leftChild?.traversePreOrder(visit: visit)
+        rightChild?.traversePreOrder(visit: visit)
     }
 }
 
@@ -226,7 +224,7 @@ var newTree: BinaryNode<Int> {
 extension BinaryNode {
     
     public func traversePostOrder(visit: (Element) -> Void) {
-        leftChild?.traversePreOrder(visit: visit)
+        leftChild?.traversePostOrder(visit: visit)
         rightChild?.traversePostOrder(visit: visit)
         visit(value)
     }
@@ -237,6 +235,179 @@ newTree.traversePostOrder {
 }
 
 ///Each one of these traversal algorithms has both a time and space complexity of O(n).
+
+
+// Binary Search trees -
+
+/*
+ A binary search tree (or BST) is a data structure that facilitates fast lookup, addition, and removal operations. Each operation has an average time complexity of O(log n), which is considerably faster than linear data structures such as arrays and linked lists. A binary search tree achieves this performance by imposing two rules on the binary tree you saw in the previous chapter:
+ • The value of a left child must be less than the value of its parent.
+ • The value of a right child must be greater than or equal to the value of its parent.
+ */
+
+public struct BinarySearchTree<Element: Comparable> {
+    public private(set) var root: BinaryNode<Element>?
+    public init() {}
+}
+
+extension BinarySearchTree: CustomStringConvertible {
+
+    public var description: String {
+        return root?.description ?? "empty tree"
+    }
+}
+
+/// Inserting elements
+
+extension BinarySearchTree {
+    
+    public mutating func insert(_ value: Element) {
+        root = insert(from: root, value: value)
+    }
+    
+    private func insert(from node: BinaryNode<Element>?, value: Element) -> BinaryNode<Element> {
+        
+        // 1  This is a recursive method, so it requires a base case for terminating recursion. If the current node is nil, you’ve found the insertion point and you return the new BinaryNode.
+        guard let node = node else { return BinaryNode(value: value) }
+        // 2 This if statement controls which way the next insert call should traverse. If the new value is less than the current value, you call insert on the left child. If the new value is greater than or equal to the current value, you’ll call insert on the right child.
+        if value < node.value {
+            node.leftChild = insert(from: node.leftChild, value: value)
+        } else {
+            node.rightChild = insert(from: node.rightChild, value: value)
+        }
+        // 3 Return the current node. This makes assignments of the form node = insert(from: node, value: value) possible as insert will either create node (if it was nil) or return node (it it was not nil).
+        return node
+    }
+}
+
+// example of building a BST
+var bst = BinarySearchTree<Int>()
+for i in 0..<5 {
+    bst.insert(i)
+}
+
+print("BST \(bst)")
+
+// That tree looks a bit unbalanced, but it does follow the rules. However, this tree layout has undesirable consequences. When working with trees, you always want to achieve a balanced format, check next chapter for this, for now just create a balanced tree
+
+
+var exampleTree: BinarySearchTree<Int> {
+    var bst = BinarySearchTree<Int>()
+    bst.insert(3)
+    bst.insert(1)
+    bst.insert(4)
+    bst.insert(0)
+    bst.insert(2)
+    bst.insert(5)
+    return bst
+}
+
+// Finding elements
+extension BinarySearchTree {
+    
+    public func contains(_ value: Element) -> Bool {
+        
+        guard let root = root else { return false }
+        var found = false
+        root.traverseInOrder {
+            if $0 == value {
+                found = true
+            }
+        }
+        return found
+    }
+}
+
+/// example:
+print("contains? \(exampleTree.contains(5))")
+
+// In-order traversal has a time complexity of O(n), thus this implementation of contains has the same time complexity as an exhaustive search through an unsorted array. However, you can do better.
+
+// Optimizing "Contains"
+extension BinarySearchTree {
+    
+    public func optimizedContains(_ value: Element) -> Bool {
+        // 1 Start off by setting current to the root node.
+        var current = root
+        // 2 While current is not nil, check the current node’s value.
+        while let node = current {
+            // 3 If the value is equal to what you’re trying to find, return true.
+            if node.value == value {
+                return true
+            }
+            
+            // 4 Otherwise, decide whether you’re going to check the left or the right child.
+            if value < node.value {
+                current = node.leftChild
+            } else {
+                current = node.rightChild
+            }
+        }
+        return false
+    }
+}
+
+// Removing elements
+
+// When removing a node with two children, replace the node you removed with smallest node in its right subtree. Based on the rules of the BST, this is the leftmost node of the right subtree:
+
+private extension BinaryNode {
+    
+    var min: BinaryNode {
+        return leftChild?.min ?? self
+    }
+}
+
+extension BinarySearchTree {
+    
+    public mutating func remove(_ value: Element) {
+        root = remove(node: root, value: value)
+    }
+    
+    private func remove(node: BinaryNode<Element>?, value: Element) -> BinaryNode<Element>? {
+        
+        guard let node = node else { return nil }
+        if value == node.value {
+            
+            // 1 In the case where the node is a leaf node, you simply return nil, thereby removing the current node.
+            if node.leftChild == nil && node.rightChild == nil { return nil }
+            
+            // 2 If the node has no left child, you return node.rightChild to reconnect the right subtree.
+            if node.leftChild == nil { return node.rightChild }
+            
+            // 3 If the node has no right child, you return node.leftChild to reconnect the left subtree.
+            if node.rightChild == nil { return node.leftChild }
+            
+            // 4 This is the case where the node to be removed has both a left and right child. You replace the node’s value with the smallest value from the right subtree. You then call remove on the right child to remove this swapped value.
+            node.value = node.rightChild!.min.value
+            node.rightChild = remove(node: node.rightChild, value: node.value)
+            
+        } else if value < node.value {
+            node.leftChild = remove(node: node.leftChild, value: value)
+        } else {
+            node.rightChild = remove(node: node.rightChild, value: value)
+        }
+        return node
+    }
+}
+
+/// Example removing a node:
+var exTree = exampleTree
+exTree.remove(3)
+
+/// Remember - the performance of operations on a BST can degrade to O(n) if the tree becomes unbalanced.
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
