@@ -81,14 +81,14 @@ extension LinkedList: CustomStringConvertible {
     
     // Append - This is meant to add a value at the end of the list, and is known as tail-end insertion.
     public mutating func append(_ value: Value) {
-        // 1
+        // 1 Like before, if the list is empty, you’ll need to update both head and tail to the new node. Since append on an empty list is functionally identical to push, you simply invoke push to do the work for you.
         guard !isEmpty else {
             push(value)
             return
         }
-        // 2
+        // 2 In all other cases, you simply create a new node after the tail node. Force unwrapping is guaranteed to succeed since you push in the isEmpty case with the above guard statement.
         tail!.next = Node(value: value)
-        // 3
+        // 3 3. Since this is tail-end insertion, your new node is also the tail of the list.
         tail = tail!.next
     }
     
@@ -122,6 +122,57 @@ extension LinkedList: CustomStringConvertible {
         node.next = Node(value: value, next: node.next)
         return node.next!
     }
+    
+    
+    /// Removing values from the list
+    
+    /*
+     There are three main operations for removing nodes:
+     */
+    
+    // Pop -  Removes the value at the front of the list.
+    @discardableResult
+    public mutating func pop() -> Value? {
+        defer {
+            head = head?.next
+            if isEmpty { tail = nil }
+        }
+        return head?.value
+    }
+    
+    // RemoveLast - Removing the last node of the list is somewhat inconvenient. Although you have a reference to the tail node, you can’t chop it off without having a reference to the node before it. Thus, you’ll have to do an arduous traversal.
+    
+    @discardableResult
+    public mutating func removeLast() -> Value? {
+        
+        // 1 If head is nil, there’s nothing to remove, so you return nil.
+        guard let head = head else { return nil }
+        // 2 If the list only consists of one node, removeLast is functionally equivalent to pop. Since pop will handle updating the head and tail references, you’ll just delegate this work to it.
+        guard head.next != nil else { return pop() }
+        
+        // 3 You keep searching for a next node until current.next is nil. This signifies that current is the last node of the list.
+        var prev = head
+        var current = head
+        
+        while let next = current.next {
+            prev = current
+            current = next
+        }
+        
+        // 4  Since current is the last node, you simply disconnect it using the prev.next reference. You also make sure to update the tail reference.
+        prev.next = nil
+        tail = prev
+        return current.value
+    }
+    
+    /// removeLast requires you to traverse all the way down the list. This makes for an O(n) operation, which is relatively expensive.
+    
+    // remove(after:) -
+    
+    
+    
+    
+    
 }
 
 /// ---Example of Push---
@@ -131,7 +182,7 @@ list.push(1)
 list.push(2)
 list.push(3)
 
-print(list)
+print("Push -> \(list)")
 
 /// ---Example of Append---
 
@@ -141,13 +192,27 @@ list1.append(2)
 list1.append(3)
 print(list1)
 
+
 /// ---Example of Insert at---
 print("Before inserting \(list1)")
 var middleNode = list1.node(at: 1)!
-for _ in 1...2 {
+for _ in 1...4 {
     middleNode = list1.insert(8, after: middleNode)
 }
 print("After inserting \(list1)")
+
+/// ---Example of Pop---
+print("Before popping list: \(list)")
+let poppedValue = list.pop()
+print("After popping list: \(list)")
+print("Popped value: " + String(describing: poppedValue))
+
+/// ---Example of RemoveLast---
+print("Before removing last node: \(list)")
+let removedValue = list.removeLast()
+print("After removing last node: \(list)")
+print("Removed value: " + String(describing: removedValue))
+
 
 
 
